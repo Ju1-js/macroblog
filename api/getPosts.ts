@@ -7,9 +7,9 @@ export default async function handler(
   request: VercelRequest,
   response: VercelResponse,
 ) {
-  const { repo, limit = '20', cursor } = request.query;
+  const { repo: repoIdentifier, limit = '20', cursor } = request.query;
 
-  if (typeof repo !== 'string') {
+  if (typeof repoIdentifier !== 'string') {
     return response.status(400).json({ error: 'Repo parameter (handle or DID) is required' });
   }
 
@@ -17,9 +17,16 @@ export default async function handler(
     // Ensure the server-side agent is logged in
     await ensureAgentLogin();
 
+    let repoDid = repoIdentifier;
+    // If the repo identifier is a handle (not a DID), resolve it first.
+    if (!repoIdentifier.startsWith('did:')) {
+      const resolveHandleResponse = await agent.resolveHandle({ handle: repoIdentifier });
+      repoDid = resolveHandleResponse.data.did;
+    }
+
     // Fetch the records from the specified repository
     const listRecordsResponse = await agent.api.com.atproto.repo.listRecords({
-      repo,
+      repo: repoDid,
       collection: MACROBLOG_COLLECTION,
       limit: parseInt(limit as string, 10),
       cursor: cursor as string | undefined,
@@ -31,7 +38,7 @@ export default async function handler(
     // Return the records and the cursor
     return response.status(200).json(listRecordsResponse.data);
   } catch (error) {
-    console.error(`Error fetching posts for ${repo}:`, error);
-    return response.status(500).json({ error: `Failed to fetch posts for ${repo}` });
+    console.error(`Error fetching posts for ${repoIdentifier}:`, error);
+    return response.status(500).json({ error: `Failed to fetch posts for ${repoIdentifier}` });
   }
 }
