@@ -1,0 +1,22 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // --- Settings for Vercel Serverless ---
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "ESNext",
+    "lib": ["esnext"],
+
+    // --- Standard Good Practices ---
+    "strict": false, // Set to 'true' if the code is already strictly typed
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": false, // Serverless functions aren't always isolated modules
+    "noEmit": false // We need to emit compiled JS for the server
+  },
+  "include": [
+    "./**/*.ts" // Apply these settings to all TypeScript files in the 'api' directory
+  ],
+  "exclude": ["node_modules"]
+}
