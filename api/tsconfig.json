@@ -16,7 +16,8 @@
     "noEmit": false // We need to emit compiled JS for the server
   },
   "include": [
-    "./**/*.ts" // Apply these settings to all TypeScript files in the 'api' directory
+    "./**/*.ts", // Apply these settings to all TypeScript files in the 'api' directory
+    "./_lib"
   ],
   "exclude": ["node_modules"]
 }

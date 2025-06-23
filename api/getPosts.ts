@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { agent, ensureAgentLogin } from './_lib/agent';
+import { agent, ensureAgentLogin } from './_lib/agent.js';
 
 const MACROBLOG_COLLECTION = 'com.macroblog.blog.post';
 
