@@ -1,17 +1,16 @@
 import { useParams } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
-import { useBlueskyAuth } from './Auth/BlueskyAuthProvider';
+// useBlueskyAuth is no longer needed for fetching public data, but keep it if you plan to add authenticated actions on this page
+// import { useBlueskyAuth } from './Auth/BlueskyAuthProvider'; 
 import { fetchAtProtoProfile } from './ATProtoStuff/AccountDetailFetcher';
 import { fetchMacroblogPosts, type MacroblogPost } from './ATProtoStuff/PostFetcher';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from 'react-router-dom';
 
-
-
 function BlogPage() {
   const { handle } = useParams();
-  const { token } = useBlueskyAuth();
+  // const { token } = useBlueskyAuth(); // Token no longer needed to fetch public posts/profiles
   const [posts, setPosts] = useState<MacroblogPost[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
@@ -29,7 +28,7 @@ function BlogPage() {
       setIsLoadingProfile(true);
       setProfileError(null);
       
-      const profile = await fetchAtProtoProfile(handle, { accessToken: token });
+      const profile = await fetchAtProtoProfile(handle);
       setDisplayName(profile.displayName || handle);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -37,7 +36,7 @@ function BlogPage() {
     } finally {
       setIsLoadingProfile(false);
     }
-  }, [handle, token]);
+  }, [handle]);
 
   const fetchPosts = useCallback(async (loadMore = false) => {
     if (!handle) return;
@@ -49,7 +48,6 @@ function BlogPage() {
       const currentCursor = loadMore ? cursor : undefined;
       
       const result = await fetchMacroblogPosts(handle, {
-        accessToken: token,
         limit: 10,
         cursor: currentCursor
       });
@@ -69,7 +67,7 @@ function BlogPage() {
     } finally {
       setIsLoadingPosts(false);
     }
-  }, [handle, token, cursor]);
+  }, [handle, cursor]); // token removed from dependency array
 
   // Fetch profile when handle changes
   useEffect(() => {
@@ -81,9 +79,14 @@ function BlogPage() {
   // Fetch posts when component mounts or handle changes
   useEffect(() => {
     if (handle) {
+      // Reset posts and cursor when handle changes
+      setPosts([]);
+      setCursor(undefined);
+      setHasMore(true);
       fetchPosts();
     }
-  }, [fetchPosts, handle]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handle]); // fetchPosts is memoized and will be called only when the handle changes
 
   const loadMorePosts = () => {
     if (!isLoadingPosts && hasMore) {
@@ -101,6 +104,10 @@ function BlogPage() {
     } catch {
       return 'Unknown date';
     }
+  };
+
+  const handleLoadContent = (post: MacroblogPost) => {
+    navigate(`/blog/post/${encodeURIComponent(post.uri)}`);
   };
 
   if (isLoadingProfile) {
@@ -125,15 +132,6 @@ function BlogPage() {
       </div>
     );
   }
-
-  const handleLoadContent = (post: MacroblogPost) => {
-    console.log('Full post object:', post);
-    console.log('Post URI being used:', post.uri);
-    console.log('Post title:', post.value.title);
-    console.log('Post CID:', post.cid);
-    console.log('Encoded URI:', encodeURIComponent(post.uri));
-    navigate(`/blog/post/${handle}/${encodeURIComponent(post.uri)}`);
-  };
 
   return (
     <>

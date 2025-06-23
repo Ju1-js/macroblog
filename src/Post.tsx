@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { fetchMacroblogPost, type MacroblogPost } from './ATProtoStuff/PostFetcher';
 import { fetchAtProtoProfile, type AtProtoProfile } from './ATProtoStuff/AccountDetailFetcher';
-import { useBlueskyAuth } from './Auth/BlueskyAuthProvider';
+// import { useBlueskyAuth } from './Auth/BlueskyAuthProvider'; // No longer needed
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
@@ -10,8 +10,8 @@ import ReactMarkdown from 'react-markdown';
 import './post.css';
 
 export default function PostPage() {
-    const params = useParams();
-    const { token } = useBlueskyAuth();
+    // The URI contains the handle/DID, so we only need that from the params
+    const { uri } = useParams<{ uri: string }>();
     const navigate = useNavigate();
     
     const [post, setPost] = useState<MacroblogPost | null>(null);
@@ -21,8 +21,8 @@ export default function PostPage() {
 
     useEffect(() => {
         const fetchPostData = async () => {
-            if (!params.handle || !params.uri) {
-                setError('Missing post information');
+            if (!uri) {
+                setError('Missing post information (URI)');
                 setIsLoading(false);
                 return;
             }
@@ -31,18 +31,21 @@ export default function PostPage() {
                 setIsLoading(true);
                 setError(null);
 
-                // Decode the URI parameter
-                const decodedUri = decodeURIComponent(params.uri);
-                console.log('Original URI param:', params.uri);
-                console.log('Decoded URI:', decodedUri);
-                console.log('Handle param:', params.handle);
+                const decodedUri = decodeURIComponent(uri);
 
-                // Fetch the post data
-                const postData = await fetchMacroblogPost(decodedUri, { accessToken: token });
+                // Fetch the post data.
+                const postData = await fetchMacroblogPost(decodedUri);
                 setPost(postData);
 
-                // Fetch the author's profile
-                const authorProfile = await fetchAtProtoProfile(params.handle, { accessToken: token });
+                // Extract the author's handle/DID from the post's URI
+                // URI format: at://<did>/<collection>/<rkey>
+                const authorDid = decodedUri.split('/')[2];
+                if (!authorDid) {
+                    throw new Error("Could not extract author's DID from post URI.");
+                }
+
+                // Fetch the author's profile.
+                const authorProfile = await fetchAtProtoProfile(authorDid);
                 setAuthor(authorProfile);
 
             } catch (err) {
@@ -54,7 +57,7 @@ export default function PostPage() {
         };
 
         fetchPostData();
-    }, [params.handle, params.uri, token]);
+    }, [uri]);
 
     const formatDate = (dateString: string) => {
         try {
@@ -81,12 +84,12 @@ export default function PostPage() {
         );
     }
 
-    if (error || !post) {
+    if (error || !post || !author) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
                     <h2 className="text-2xl font-bold text-red-600 mb-4">Post Not Found</h2>
-                    <p className="text-gray-600 mb-4">{error || 'Could not load the requested post'}</p>
+                    <p className="text-gray-600 mb-4">{error || 'Could not load the requested post or author details.'}</p>
                     <Button onClick={() => navigate(-1)}>Go Back</Button>
                 </div>
             </div>
@@ -107,22 +110,20 @@ export default function PostPage() {
                                 </CardTitle>
                                 
                                 {/* Author Info */}
-                                {author && (
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <img 
-                                            src={author.avatar || '/default-avatar.png'} 
-                                            alt={author.displayName}
-                                            className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
-                                            onError={(e) => {
-                                                e.currentTarget.src = 'https://via.placeholder.com/48x48/6B7280/FFFFFF?text=U';
-                                            }}
-                                        />
-                                        <div>
-                                            <p className="font-semibold text-gray-900">{author.displayName}</p>
-                                            <p className="text-sm text-gray-600">@{author.handle}</p>
-                                        </div>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <img 
+                                        src={author.avatar || '/default-avatar.png'} 
+                                        alt={author.displayName}
+                                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                                        onError={(e) => {
+                                            e.currentTarget.src = 'https://via.placeholder.com/48x48/6B7280/FFFFFF?text=U';
+                                        }}
+                                    />
+                                    <div>
+                                        <p className="font-semibold text-gray-900">{author.displayName}</p>
+                                        <p className="text-sm text-gray-600">@{author.handle}</p>
                                     </div>
-                                )}
+                                </div>
 
                                 {/* Post Date */}
                                 <p className="text-sm text-gray-500 mb-4">
@@ -148,11 +149,11 @@ export default function PostPage() {
 
                                 {/* Back to Blog Button */}
                                 <Button 
-                                    onClick={() => navigate(`/blog/${params.handle}`)}
+                                    onClick={() => navigate(`/blog/${author.handle}`)}
                                     variant="neutral"
                                     className="w-full"
                                 >
-                                    ← Back to Blog
+                                    ← Back to {author.displayName}'s Blog
                                 </Button>
                             </CardHeader>
                         </Card>
