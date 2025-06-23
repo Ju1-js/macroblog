@@ -13,6 +13,8 @@ async function ensureLogin() {
     loginPromise = (async () => {
       try {
         console.log('Logging in with server-side account...');
+        console.log('Using handle:', process.env.BSKY_HANDLE);
+        console.log('Using password:', process.env.BSKY_APP_PASSWORD ? '******' : 'Not set');
         await agent.login({
           identifier: process.env.BSKY_HANDLE!,
           password: process.env.BSKY_APP_PASSWORD!,
