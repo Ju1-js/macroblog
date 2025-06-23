@@ -1,8 +1,8 @@
-import { BskyAgent } from '@atproto/api';
+import { AtpAgent } from '@atproto/api';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Initialize the Bluesky Agent
-const agent = new BskyAgent({
+const agent = new AtpAgent({
   service: 'https://bsky.social',
 });
 
@@ -13,11 +13,11 @@ async function ensureLogin() {
     loginPromise = (async () => {
       try {
         console.log('Logging in with server-side account...');
-        console.log('Using handle:', process.env.BSKY_HANDLE);
-        console.log('Using password:', process.env.BSKY_APP_PASSWORD ? '******' : 'Not set');
+        console.log('Using handle:', process.env.BLUESKY_HANDLE);
+        console.log('Using password:', process.env.BLUESKY_APP_PASSWORD ? '******' : 'Not set');
         await agent.login({
-          identifier: process.env.BSKY_HANDLE!,
-          password: process.env.BSKY_APP_PASSWORD!,
+          identifier: process.env.BLUESKY_HANDLE!,
+          password: process.env.BLUESKY_APP_PASSWORD!,
         });
         console.log('Server-side login successful.');
       } catch (error) {
