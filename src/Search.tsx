@@ -2,7 +2,7 @@ import './App.css'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useEffect, useState, useCallback } from "react";
-import { useBlueskyAuth } from './Auth/BlueskyAuthProvider';
+// import { useBlueskyAuth } from './Auth/BlueskyAuthProvider';
 import { fetchAtProtoProfile } from './ATProtoStuff/AccountDetailFetcher';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,7 +12,7 @@ interface HandleProp {
 
 // Blog Search Page Component
 function SearchPage() {
-  const { token } = useBlueskyAuth();
+  // const { token } = useBlueskyAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Array<{ handle: string; displayName: string; avatar?: string }>>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -42,10 +42,11 @@ function SearchPage() {
       // If it looks like a handle, try to fetch the profile
       if (query.includes('.') || query.startsWith('@')) {
         const handle = query.startsWith('@') ? query.slice(1) : query;
-        const profile = await fetchAtProtoProfile(handle, { accessToken: token });
+        // The options object with the access token is no longer needed
+        const profile = await fetchAtProtoProfile(handle);
         
         setSearchResults([{
-          handle: profile.did,
+          handle: profile.did, // Use did here for a more stable key if available
           displayName: profile.displayName || handle,
           avatar: profile.avatar
         }]);
@@ -137,7 +138,7 @@ function SearchPage() {
 
 function ProfileCard({handle}: HandleProp) {
   const navigate = useNavigate();
-  const { token } = useBlueskyAuth();
+  // const { token } = useBlueskyAuth();
   const [displayName, setDisplayName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -149,7 +150,7 @@ function ProfileCard({handle}: HandleProp) {
       setIsLoading(true);
       setError(null);
       
-      const profile = await fetchAtProtoProfile(handle, { accessToken: token });
+      const profile = await fetchAtProtoProfile(handle);
       setDisplayName(profile.displayName || handle);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -157,7 +158,7 @@ function ProfileCard({handle}: HandleProp) {
     } finally {
       setIsLoading(false);
     }
-  }, [handle, token]);
+  }, [handle]);
 
   useEffect(() => {
     if (handle) {
@@ -195,19 +196,19 @@ function ProfileCard({handle}: HandleProp) {
 }
 
 export function ProfilePicture({handle}: HandleProp) {
-  const { token } = useBlueskyAuth();
+  // const { token } = useBlueskyAuth();
   const [avatar, setAvatar] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const fetchAvatar = useCallback(async () => {
     if (!handle) return;
-
+  
     try {
       setIsLoading(true);
       setError(null);
       
-      const profile = await fetchAtProtoProfile(handle, { accessToken: token });
+      const profile = await fetchAtProtoProfile(handle);
       setAvatar(profile.avatar || "");
     } catch (error) {
       console.error('Error fetching avatar:', error);
@@ -215,7 +216,7 @@ export function ProfilePicture({handle}: HandleProp) {
     } finally {
       setIsLoading(false);
     }
-  }, [handle, token]);
+  }, [handle]);
 
   useEffect(() => {
     if (handle) {

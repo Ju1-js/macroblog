@@ -11,25 +11,12 @@ export interface AtProtoProfile {
   postsCount?: number;
 }
 
-export interface ProfileFetchOptions {
-  accessToken?: string;
-}
-
 export async function fetchAtProtoProfile(
   handle: string, 
-  options: ProfileFetchOptions = {}
 ): Promise<AtProtoProfile> {
   try {
     const response = await axios.get(
-      `https://bsky.social/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(handle)}`,
-      {
-        headers: options.accessToken ? {
-          'Authorization': `Bearer ${options.accessToken}`,
-          'Content-Type': 'application/json'
-        } : {
-          'Content-Type': 'application/json'
-        }
-      }
+      `/api/getProfile?actor=${encodeURIComponent(handle)}`
     );
 
     const { did, displayName, avatar, handle: userHandle, description, followersCount, followsCount, postsCount } = response.data;
@@ -45,7 +32,11 @@ export async function fetchAtProtoProfile(
       postsCount
     };
   } catch (error) {
-    console.error('Error fetching profile:', error);
-    throw new Error(`Failed to fetch profile for ${handle}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('Error fetching profile through serverless proxy:', error);
+    let errorMessage = `Failed to fetch profile for ${handle}`;
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      errorMessage = `User not found: ${handle}`;
+    }
+    throw new Error(errorMessage);
   }
 }
