@@ -1,5 +1,5 @@
+import { AtpAgent } from '@atproto/api';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { agent, ensureAgentLogin } from './_lib/agent.js';
 
 export default async function handler(
   request: VercelRequest,
@@ -12,8 +12,8 @@ export default async function handler(
   }
 
   try {
-    // Ensure the server-side agent is logged in
-    await ensureAgentLogin();
+    // Use a fresh, unauthenticated agent for public data
+    const agent = new AtpAgent({ service: 'https://bsky.social' });
 
     // Fetch the profile from Bluesky
     const { data } = await agent.getProfile({ actor });

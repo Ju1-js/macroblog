@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { agent, ensureAgentLogin } from './_lib/agent.js';
+import { AtpAgent } from '@atproto/api';
 
 export default async function handler(
   request: VercelRequest,
@@ -12,8 +12,8 @@ export default async function handler(
   }
 
   try {
-    // Ensure the server-side agent is logged in
-    await ensureAgentLogin();
+    // Use a fresh, unauthenticated agent for fetching public records
+    const agent = new AtpAgent({ service: 'https://bsky.social' });
 
     // Use getRecord for efficiency
     const getRecordResponse = await agent.api.com.atproto.repo.getRecord({

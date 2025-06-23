@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { agent, ensureAgentLogin } from './_lib/agent.js';
+import { AtpAgent } from '@atproto/api';
 
 const MACROBLOG_COLLECTION = 'com.macroblog.blog.post';
 
@@ -14,11 +14,15 @@ export default async function handler(
   }
 
   try {
-    // Ensure the server-side agent is logged in
-    await ensureAgentLogin();
+    // For fetching posts, we need an authenticated agent
+    const agent = new AtpAgent({ service: 'https://bsky.social' });
+    await agent.login({
+      identifier: process.env.BLUESKY_HANDLE!,
+      password: process.env.BLUESKY_APP_PASSWORD!,
+    });
 
     let repoDid = repoIdentifier;
-    // If the repo identifier is a handle (not a DID), resolve it first.
+    // If the identifier is a handle, resolve it to a DID first.
     if (!repoIdentifier.startsWith('did:')) {
       const resolveHandleResponse = await agent.resolveHandle({ handle: repoIdentifier });
       repoDid = resolveHandleResponse.data.did;
@@ -32,10 +36,7 @@ export default async function handler(
       cursor: cursor as string | undefined,
     });
 
-    // Set caching headers
     response.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate'); // Cache for 10 minutes
-
-    // Return the records and the cursor
     return response.status(200).json(listRecordsResponse.data);
   } catch (error) {
     console.error(`Error fetching posts for ${repoIdentifier}:`, error);
