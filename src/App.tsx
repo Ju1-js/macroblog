@@ -26,7 +26,7 @@ function App() {
           <Route path="/home" element={<HomePage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/blog/:handle" element={<BlogPage />} />
-          <Route path="/blog/post/:handle/:uri" element={<PostPage />} />
+          <Route path="/blog/post/:uri" element={<PostPage />} />
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </BlueskyAuthProvider>
